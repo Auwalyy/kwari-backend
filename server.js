@@ -11,6 +11,8 @@ import compression from "compression";
 
 import authRoutes from "./routes/auth.routes.js";
 import referralRoutes from "./routes/referral.routes.js";
+import storeRoutes from "./routes/store.routes.js";
+import productRoutes from "./routes/product.routes.js";
 // Import future routers here:
 // import storeRoutes from "./routes/store.routes.js";
 // import productRoutes from "./routes/product.routes.js";
@@ -98,6 +100,8 @@ app.get("/health", (req, res) => {
 // ─── API routes ───────────────────────────────────────────────────────────────
 app.use("/api/v1/auth", authRoutes);
 app.use("/api/v1/referral", referralRoutes);
+app.use("/api/v1/stores", storeRoutes);
+app.use("/api/v1/products", productRoutes);
 // app.use("/api/v1/stores",    storeRoutes);
 // app.use("/api/v1/products",  productRoutes);
 // app.use("/api/v1/messages",  messageRoutes);
