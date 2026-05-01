@@ -1,44 +1,83 @@
-import mongoose from 'mongoose'
+import mongoose from "mongoose";
 
-const StoreSchema = new mongoose.Schema({
+const { Schema } = mongoose;
+
+const StoreSchema = new Schema(
+  {
     traderId: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'User',
-        required: true
+      type: Schema.Types.ObjectId,
+      ref: "User",
+      required: [true, "Trader is required"],
+      unique: true,
     },
     storeName: {
-        type: String,
-        required: true,
+      type: String,
+      required: [true, "Store name is required"],
+      trim: true,
+      maxlength: [100, "Store name cannot exceed 100 characters"],
     },
-    storeImage: {
-        type: String,
+    description: {
+      type: String,
+      trim: true,
+      maxlength: [500, "Description cannot exceed 500 characters"],
     },
-    storeDescription: {
-        type: String,
+    city: {
+      type: String,
+      trim: true,
     },
-    storeLocation: {
-        type: String,
-        required: true,
+    marketName: {
+      type: String,
+      trim: true,
     },
-    storePhoneNumber: {
-        type: String,
-        required: true,
+    bannerImageUrl: {
+      type: String,
+      default: null,
+    },
+    bannerCloudId: {
+      type: String,
+      default: null,
+      select: false,
+    },
+    contactPhone: {
+      type: String,
+      trim: true,
     },
     rating: {
-avg:   { Number, default: 0, min: 0, max: 5 },
-count: { Number, default: 0 },
-total: { Number, default: 0 }  
-},
-responseRate:  { Number, default: 0 } , // % updated nightly by job
-plan:          { String, default: "free", enum: [free, pro] },
-planExpiresAt: { Date }   ,
-productCount:  { Number, default: 0 },   //maintained by $inc, avoids COUNT queries
-    isVerified: {
-        type: Boolean,
-        default: false
+      avg:   { type: Number, default: 0, min: 0, max: 5 },
+      count: { type: Number, default: 0 },
+      total: { type: Number, default: 0 },
+    },
+    responseRate: {
+      type: Number,
+      default: 0,
+      min: 0,
+      max: 100,
+    },
+    plan: {
+      type: String,
+      enum: ["free", "pro"],
+      default: "free",
+    },
+    planExpiresAt: {
+      type: Date,
+      default: null,
+    },
+    productCount: {
+      type: Number,
+      default: 0,
     },
     isActive: {
-        type: Boolean,
-        default: true
-    }
-})
+      type: Boolean,
+      default: true,
+    },
+  },
+  { timestamps: true }
+);
+
+StoreSchema.index({ traderId: 1 }, { unique: true });
+StoreSchema.index({ city: 1 });
+StoreSchema.index({ marketName: 1 });
+StoreSchema.index({ "rating.avg": -1 });
+
+const Store = mongoose.model("Store", StoreSchema);
+export default Store;
