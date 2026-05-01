@@ -39,9 +39,9 @@ export const createProduct = async (req, res) => {
       return res.status(404).json({ status: "fail", message: "Store not found. Create a store first." });
     }
 
-    const { fabricName, category, retailPrice } = req.body;
-    if (!fabricName || !category || !retailPrice) {
-      return res.status(400).json({ status: "fail", message: "fabricName, category and retailPrice are required" });
+    const { fabricName, category, retailPrice, wholesalePrice } = req.body;
+    if (!fabricName || !category || !retailPrice || !wholesalePrice) {
+      return res.status(400).json({ status: "fail", message: "fabricName, category, retailPrice and wholesalePrice are required" });
     }
 
     // ── Duplicate detection ──────────────────────────────────────────────────
@@ -140,13 +140,16 @@ export const getProducts = async (req, res) => {
       Product.countDocuments(filter),
     ]);
 
+    const role = req.user?.role;
+    const sanitized = products.map((p) => sanitizeForRole(p, role));
+
     return res.status(200).json({
       status: "success",
-      results: products.length,
+      results: sanitized.length,
       total,
       page: Number(page),
       pages: Math.ceil(total / Number(limit)),
-      data: { products },
+      data: { products: sanitized },
     });
   } catch (error) {
     console.error("getProducts error:", error);
@@ -170,7 +173,7 @@ export const getProduct = async (req, res) => {
       return res.status(404).json({ status: "fail", message: "Product not found" });
     }
 
-    return res.status(200).json({ status: "success", data: { product } });
+    return res.status(200).json({ status: "success", data: { product: sanitizeForRole(product, req.user?.role) } });
   } catch (error) {
     console.error("getProduct error:", error);
     return res.status(500).json({ status: "error", message: "Internal server error" });

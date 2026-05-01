@@ -21,20 +21,18 @@ const optionalAuth = (req, res, next) => {
   next();
 };
 
-// ─── Public (with optional auth for price visibility) ───────────────────────────
+// ─── Public (with optional auth for price visibility) ────────────────────────
 router.get("/",    optionalAuth, getProducts);
+router.get("/my-products", protect, requireVerified, restrictTo("trader", "employee"), getMyProducts);
 router.get("/:id", optionalAuth, getProduct);
 
 // ─── Trader + Employee ────────────────────────────────────────────────────────
-router.use(protect, requireVerified, restrictTo("trader", "employee"));
-
-router.get("/my-products",                                        getMyProducts);
-router.post("/",          uploadProductImages.array("images", 5), createProduct);
-router.patch("/:id",                                              updateProduct);
-router.post("/:id/images", uploadProductImages.array("images", 5), addProductImages);
-router.delete("/:id/images/:imageId",                             deleteProductImage);
+router.post("/",           protect, requireVerified, restrictTo("trader", "employee"), uploadProductImages.array("images", 5), createProduct);
+router.patch("/:id",       protect, requireVerified, restrictTo("trader", "employee"), updateProduct);
+router.post("/:id/images", protect, requireVerified, restrictTo("trader", "employee"), uploadProductImages.array("images", 5), addProductImages);
+router.delete("/:id/images/:imageId", protect, requireVerified, restrictTo("trader", "employee"), deleteProductImage);
 
 // ─── Trader only ──────────────────────────────────────────────────────────────
-router.delete("/:id", restrictTo("trader"),                       deleteProduct);
+router.delete("/:id", protect, requireVerified, restrictTo("trader"), deleteProduct);
 
 export default router;

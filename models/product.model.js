@@ -46,6 +46,7 @@ const ProductSchema = new Schema(
     },
     wholesalePrice: {
       type: Number,
+      required: [true, "Wholesale price is required"],
       min: [0, "Price cannot be negative"],
     },
     color: { type: String, trim: true },
@@ -58,8 +59,8 @@ const ProductSchema = new Schema(
     },
     images: [
       {
-        url:          { type: String, required: true },
-        cloudinaryId: { type: String, required: true },
+        url:          { type: String },
+        cloudinaryId: { type: String },
         isPrimary:    { type: Boolean, default: false },
         sortOrder:    { type: Number, default: 0 },
       },
