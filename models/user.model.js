@@ -13,11 +13,10 @@ const UserSchema = new mongoose.Schema({
     password: {
         type: String,
         required: true,
-
     },
     phone: {
         type: String,
-        required: true, 
+        required: true,
     },
     role: {
         type: String,
@@ -27,16 +26,14 @@ const UserSchema = new mongoose.Schema({
         type: Boolean,
         default: false
     },
+    linkedStoreId:  { ObjectId, ref: Store },
+    linkedTraderId: { ObjectId, ref: User },
     isActive: {
         type: Boolean,
         default: true
     },
-    createdAt: {
-        type: Date,
-        default: Date.now
-    },
-    updatedAt: {
-        type: Date,
-        default: Date.now
-    }
-})
+}, { timestamps: true });
+
+const User = mongoose.model("User", UserSchema);
+
+export default User;
