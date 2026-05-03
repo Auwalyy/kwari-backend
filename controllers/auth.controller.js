@@ -136,22 +136,21 @@ export const signup = async (req, res) => {
     }
 
     // Create and store the OTP
-    const otp = newUser.createEmailOtp();
+    const otp = newUser.createPhoneOtp();
     await newUser.save();
 
-    // Send email completely non-blocking — respond immediately
+    // Send SMS completely non-blocking — respond immediately
     res.status(201).json({
       status: "success",
-      message: "Account created. Please check your email to verify your account.",
+      message: "Account created. Please verify your phone number with the OTP sent via SMS.",
       data: { userId: newUser._id },
     });
 
-    console.log(`\n🔑 OTP for ${newUser.email}: ${otp}\n`);
-    sendEmail({
-      to: newUser.email,
-      subject: "Your verification code",
-      html: `<p>Hi ${newUser.name},</p><p>Your verification code is: <strong>${otp}</strong>. It expires in 10 minutes.</p>`,
-    }).catch((err) => console.error("Verification email failed:", err.message));
+    console.log(`\n🔑 Phone OTP for ${newUser.phone}: ${otp}\n`);
+    sendSms(
+      newUser.phone,
+      `Your Kwari verification code is: ${otp}. It expires in 10 minutes.`
+    ).catch((err) => console.error("SMS failed:", err.message));
 
     return;
   } catch (error) {
@@ -321,22 +320,23 @@ export const refreshToken = async (req, res) => {
  * Verifies the user's email address.
  */
 export const verifyEmail = async (req, res) => {
-  const { email, otp } = req.body;
+  const { phone, otp } = req.body;
 
-  if (!email || !otp) {
-    return res.status(400).json({ status: "fail", message: "Email and OTP are required" });
+  if (!phone || !otp) {
+    return res.status(400).json({ status: "fail", message: "Phone number and OTP are required" });
   }
 
   try {
-    const user = await User.findOne({ email: email.toLowerCase() }).select("+emailOtp +emailOtpExpires");
+    const user = await User.findOne({ phone }).select("+phoneOtp +phoneOtpExpires");
 
-    if (!user || user.emailOtp !== otp || user.emailOtpExpires < Date.now()) {
+    if (!user || user.phoneOtp !== otp || user.phoneOtpExpires < Date.now()) {
       return res.status(400).json({ status: "fail", message: "Invalid or expired OTP" });
     }
 
-    user.isVerified = true;
-    user.emailOtp = undefined;
-    user.emailOtpExpires = undefined;
+    user.isVerified      = true;
+    user.isPhoneVerified = true;
+    user.phoneOtp        = undefined;
+    user.phoneOtpExpires = undefined;
     await user.save({ validateBeforeSave: false });
 
     return sendAuthResponse(res, user, 200);
@@ -352,39 +352,31 @@ export const verifyEmail = async (req, res) => {
  * Resends the verification email (rate-limited: 1 per 2 minutes).
  */
 export const resendVerificationEmail = async (req, res) => {
-  const { email } = req.body;
+  const { phone } = req.body;
 
-  if (!email) {
-    return res.status(400).json({ status: "fail", message: "Email is required" });
+  if (!phone) {
+    return res.status(400).json({ status: "fail", message: "Phone number is required" });
   }
 
   try {
-    const user = await User.findOne({ email: email.toLowerCase() }).select(
-      "+emailVerificationToken +emailVerificationExpires"
-    );
+    const user = await User.findOne({ phone }).select("+phoneOtp +phoneOtpExpires");
 
-    // Always respond the same way to prevent email enumeration
     const safeResponse = () =>
       res.status(200).json({
         status: "success",
-        message: "If that email exists and is unverified, a new link has been sent.",
+        message: "If that number exists and is unverified, a new OTP has been sent.",
       });
 
     if (!user || user.isVerified) return safeResponse();
 
-    const otp = user.createEmailOtp();
+    const otp = user.createPhoneOtp();
     await user.save({ validateBeforeSave: false });
 
-    console.log(`\n🔑 OTP for ${user.email}: ${otp}\n`);
-    try {
-      await sendEmail({
-        to: user.email,
-        subject: "Your new verification code",
-        html: `<p>Hi ${user.name},</p><p>Your new verification code is: <strong>${otp}</strong>. It expires in 10 minutes.</p>`,
-      });
-    } catch (emailErr) {
-      console.error("Resend email failed:", emailErr.message);
-    }
+    console.log(`\n🔑 Resend OTP for ${user.phone}: ${otp}\n`);
+    sendSms(
+      user.phone,
+      `Your new Kwari verification code is: ${otp}. It expires in 10 minutes.`
+    ).catch((err) => console.error("Resend SMS failed:", err.message));
 
     return safeResponse();
   } catch (error) {
