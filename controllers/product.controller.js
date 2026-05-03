@@ -2,6 +2,7 @@ import Product from "../models/product.model.js";
 import Store from "../models/store.model.js";
 import cloudinary from "../utils/cloudinary.js";
 import crypto from "crypto";
+import PriceHistory from "../models/pricehistory.model.js";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -17,12 +18,16 @@ const pickFields = (body, fields) => {
   return result;
 };
 
-// Strip retailPrice for anyone who is not a trader or employee
-const sanitizeForRole = (product, role) => {
+// Strip retailPrice based on role and ownership
+const sanitizeForRole = (product, user) => {
   const obj = typeof product.toObject === "function" ? product.toObject() : { ...product };
-  if (role !== "trader" && role !== "employee") {
-    delete obj.retailPrice;
-  }
+  const role = user?.role;
+  const traderId = obj.traderId?._id?.toString() || obj.traderId?.toString();
+
+  if (role === "trader" && user?.id === traderId) return obj;
+  if (role === "employee" && user?.linkedTraderId?.toString() === traderId) return obj;
+
+  delete obj.retailPrice;
   return obj;
 };
 
@@ -141,7 +146,7 @@ export const getProducts = async (req, res) => {
     ]);
 
     const role = req.user?.role;
-    const sanitized = products.map((p) => sanitizeForRole(p, role));
+    const sanitized = products.map((p) => sanitizeForRole(p, req.user));
 
     return res.status(200).json({
       status: "success",
@@ -223,6 +228,20 @@ export const updateProduct = async (req, res) => {
     }
 
     const updates = pickFields(req.body, ALLOWED_FIELDS);
+
+    // Log price history if price changed
+    const priceChanged = (updates.retailPrice && updates.retailPrice !== product.retailPrice) ||
+                         (updates.wholesalePrice && updates.wholesalePrice !== product.wholesalePrice);
+    if (priceChanged) {
+      await PriceHistory.create({
+        productId:      product._id,
+        traderId:       product.traderId,
+        retailPrice:    updates.retailPrice    ?? product.retailPrice,
+        wholesalePrice: updates.wholesalePrice ?? product.wholesalePrice,
+        changedBy:      req.user.id,
+      });
+    }
+
     Object.assign(product, updates);
     await product.save();
 

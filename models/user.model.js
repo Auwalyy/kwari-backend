@@ -58,6 +58,20 @@ const UserSchema = new Schema(
       select: false,
     },
 
+    // ─── Phone verification ──────────────────────────────────────────────────
+    isPhoneVerified: {
+      type: Boolean,
+      default: false,
+    },
+    phoneOtp: {
+      type: String,
+      select: false,
+    },
+    phoneOtpExpires: {
+      type: Date,
+      select: false,
+    },
+
     // ─── Password reset ───────────────────────────────────────────────────────
     passwordResetOtp: {
       type: String,
@@ -159,6 +173,8 @@ const UserSchema = new Schema(
         delete ret.refreshTokens;
         delete ret.emailOtp;
         delete ret.emailOtpExpires;
+        delete ret.phoneOtp;
+        delete ret.phoneOtpExpires;
         delete ret.passwordResetOtp;
         delete ret.passwordResetOtpExpires;
         delete ret.loginAttempts;
@@ -188,7 +204,15 @@ UserSchema.virtual("isLocked").get(function () {
 UserSchema.methods.createEmailOtp = function () {
   const otp = Math.floor(100000 + Math.random() * 900000).toString();
   this.emailOtp = otp;
-  this.emailOtpExpires = Date.now() + 10 * 60 * 1000; // 10 min
+  this.emailOtpExpires = Date.now() + 10 * 60 * 1000;
+  return otp;
+};
+
+/** Generate a 6-digit OTP for phone verification (expires in 10 min). */
+UserSchema.methods.createPhoneOtp = function () {
+  const otp = Math.floor(100000 + Math.random() * 900000).toString();
+  this.phoneOtp = otp;
+  this.phoneOtpExpires = Date.now() + 10 * 60 * 1000;
   return otp;
 };
 

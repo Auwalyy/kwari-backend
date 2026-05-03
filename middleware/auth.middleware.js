@@ -21,7 +21,7 @@ export const protect = async (req, res, next) => {
       return res.status(401).json({ status: "fail", message: "User no longer exists" });
     }
 
-    req.user = { id: user._id.toString(), role: user.role };
+    req.user = { id: user._id.toString(), role: user.role, linkedTraderId: user.linkedTraderId?.toString() };
     next();
   } catch (error) {
     if (error.name === "TokenExpiredError") {

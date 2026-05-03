@@ -4,6 +4,7 @@ import jwt from "jsonwebtoken";
 import User from "../models/user.model.js";
 import ReferralCode from "../models/referralcode.model.js";
 import { sendEmail } from "../utils/email.js";
+import { sendSms } from "../utils/sms.js";
 
 // ─── JWT helpers ─────────────────────────────────────────────────────────────
 
@@ -554,6 +555,71 @@ export const deleteAccount = async (req, res) => {
     return res.status(200).json({ status: "success", message: "Account deleted" });
   } catch (error) {
     console.error("deleteAccount error:", error);
+    return res.status(500).json({ status: "error", message: "Internal server error" });
+  }
+};
+
+/**
+ * POST /auth/send-phone-otp
+ * Authenticated — send OTP to the user's phone number.
+ */
+export const sendPhoneOtp = async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id).select("+phoneOtp +phoneOtpExpires");
+    if (!user) {
+      return res.status(404).json({ status: "fail", message: "User not found" });
+    }
+
+    if (user.isPhoneVerified) {
+      return res.status(400).json({ status: "fail", message: "Phone number already verified" });
+    }
+
+    const otp = user.createPhoneOtp();
+    await user.save({ validateBeforeSave: false });
+
+    console.log(`\n📱 Phone OTP for ${user.phone}: ${otp}\n`);
+    try {
+      await sendSms(user.phone, `Your Kwari verification code is: ${otp}. It expires in 10 minutes.`);
+    } catch (smsErr) {
+      console.error("SMS failed:", smsErr.message);
+    }
+
+    return res.status(200).json({ status: "success", message: "OTP sent to your phone number" });
+  } catch (error) {
+    console.error("sendPhoneOtp error:", error);
+    return res.status(500).json({ status: "error", message: "Internal server error" });
+  }
+};
+
+/**
+ * POST /auth/verify-phone-otp
+ * Authenticated — verify the phone OTP.
+ * Body: { otp }
+ */
+export const verifyPhoneOtp = async (req, res) => {
+  const { otp } = req.body;
+  if (!otp) {
+    return res.status(400).json({ status: "fail", message: "OTP is required" });
+  }
+
+  try {
+    const user = await User.findById(req.user.id).select("+phoneOtp +phoneOtpExpires");
+    if (!user) {
+      return res.status(404).json({ status: "fail", message: "User not found" });
+    }
+
+    if (!user.phoneOtp || user.phoneOtp !== otp || user.phoneOtpExpires < Date.now()) {
+      return res.status(400).json({ status: "fail", message: "Invalid or expired OTP" });
+    }
+
+    user.isPhoneVerified = true;
+    user.phoneOtp        = undefined;
+    user.phoneOtpExpires = undefined;
+    await user.save({ validateBeforeSave: false });
+
+    return res.status(200).json({ status: "success", message: "Phone number verified successfully" });
+  } catch (error) {
+    console.error("verifyPhoneOtp error:", error);
     return res.status(500).json({ status: "error", message: "Internal server error" });
   }
 };

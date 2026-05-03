@@ -12,6 +12,8 @@ import {
   changePassword,
   getMe,
   deleteAccount,
+  sendPhoneOtp,
+  verifyPhoneOtp,
 } from "../controllers/auth.controller.js";
 import { protect } from "../middleware/auth.middleware.js";
 
@@ -40,11 +42,13 @@ router.patch("/reset-password",       strictLimiter, resetPassword);
 
 router.use(protect); // everything below requires auth
 
-router.post("/logout",         logout);
-router.post("/logout-all",     logoutAll);
-router.get("/me",              getMe);
+router.post("/logout",           logout);
+router.post("/logout-all",       logoutAll);
+router.get("/me",                getMe);
 router.patch("/change-password", authLimiter, changePassword);
-router.delete("/me",           deleteAccount);
+router.delete("/me",             deleteAccount);
+router.post("/send-phone-otp",   sendPhoneOtp);
+router.post("/verify-phone-otp", verifyPhoneOtp);
 
 export default router;
 

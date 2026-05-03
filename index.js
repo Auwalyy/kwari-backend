@@ -13,6 +13,14 @@ import authRoutes from "./routes/auth.routes.js";
 import referralRoutes from "./routes/referral.routes.js";
 import storeRoutes from "./routes/store.routes.js";
 import productRoutes from "./routes/product.routes.js";
+import threadRoutes from "./routes/thread.routes.js";
+import ratingRoutes from "./routes/rating.routes.js";
+import reportRoutes from "./routes/report.routes.js";
+import notificationRoutes from "./routes/notification.routes.js";
+import kycRoutes from "./routes/kyc.routes.js";
+import searchHistoryRoutes from "./routes/searchhistory.routes.js";
+import dashboardRoutes from "./routes/dashboard.routes.js";
+import searchRoutes from "./routes/search.routes.js";
 // Import future routers here:
 // import storeRoutes from "./routes/store.routes.js";
 // import productRoutes from "./routes/product.routes.js";
@@ -98,10 +106,18 @@ app.get("/health", (req, res) => {
 });
 
 // ─── API routes ───────────────────────────────────────────────────────────────
-app.use("/api/v1/auth", authRoutes);
-app.use("/api/v1/referral", referralRoutes);
-app.use("/api/v1/stores", storeRoutes);
-app.use("/api/v1/products", productRoutes);
+app.use("/api/v1/auth",           authRoutes);
+app.use("/api/v1/referral",        referralRoutes);
+app.use("/api/v1/stores",          storeRoutes);
+app.use("/api/v1/products",        productRoutes);
+app.use("/api/v1/threads",         threadRoutes);
+app.use("/api/v1/ratings",         ratingRoutes);
+app.use("/api/v1/reports",         reportRoutes);
+app.use("/api/v1/notifications",   notificationRoutes);
+app.use("/api/v1/kyc",             kycRoutes);
+app.use("/api/v1/search-history",  searchHistoryRoutes);
+app.use("/api/v1/dashboard",       dashboardRoutes);
+app.use("/api/v1/search",          searchRoutes);
 // app.use("/api/v1/stores",    storeRoutes);
 // app.use("/api/v1/products",  productRoutes);
 // app.use("/api/v1/messages",  messageRoutes);
