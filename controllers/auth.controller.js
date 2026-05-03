@@ -139,22 +139,21 @@ export const signup = async (req, res) => {
     const otp = newUser.createEmailOtp();
     await newUser.save();
 
-    console.log(`\n🔑 OTP for ${newUser.email}: ${otp}\n`);
-    try {
-      await sendEmail({
-        to: newUser.email,
-        subject: "Your verification code",
-        html: `<p>Hi ${newUser.name},</p><p>Your verification code is: <strong>${otp}</strong>. It expires in 10 minutes.</p>`,
-      });
-    } catch (emailErr) {
-      console.error("Verification email failed:", emailErr.message);
-    }
-
-    return res.status(201).json({
+    // Send email completely non-blocking — respond immediately
+    res.status(201).json({
       status: "success",
       message: "Account created. Please check your email to verify your account.",
       data: { userId: newUser._id },
     });
+
+    console.log(`\n🔑 OTP for ${newUser.email}: ${otp}\n`);
+    sendEmail({
+      to: newUser.email,
+      subject: "Your verification code",
+      html: `<p>Hi ${newUser.name},</p><p>Your verification code is: <strong>${otp}</strong>. It expires in 10 minutes.</p>`,
+    }).catch((err) => console.error("Verification email failed:", err.message));
+
+    return;
   } catch (error) {
     if (error.code === 11000) {
       return res.status(409).json({ status: "fail", message: "Email already registered" });

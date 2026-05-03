@@ -26,7 +26,6 @@ const KycSubmissionSchema = new Schema({
   submittedAt:   { type: Date, default: Date.now },
 }, { timestamps: true });
 
-KycSubmissionSchema.index({ traderId: 1 }, { unique: true });
 KycSubmissionSchema.index({ status: 1, submittedAt: -1 });
 
 const KycSubmission = mongoose.model("KycSubmission", KycSubmissionSchema);

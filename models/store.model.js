@@ -74,7 +74,6 @@ const StoreSchema = new Schema(
   { timestamps: true }
 );
 
-StoreSchema.index({ traderId: 1 }, { unique: true });
 StoreSchema.index({ city: 1 });
 StoreSchema.index({ marketName: 1 });
 StoreSchema.index({ "rating.avg": -1 });
